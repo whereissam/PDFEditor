@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun add:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run build)",
+      "Bash(timeout 10s bun run dev:*)",
+      "Bash(docker build:*)",
+      "Bash(curl:*)",
+      "Bash(DOC_ID=\"1769754554890-tw3k7tz8c\")",
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}
