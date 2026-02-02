@@ -214,6 +214,7 @@ export interface EditorState {
   searchQuery: string
   searchResults: { pageIndex: number; matchIndex: number }[]
   currentSearchIndex: number
+  pdfDarkMode: boolean
 }
 
 // Actions
@@ -265,6 +266,7 @@ export interface EditorActions {
   setSearchQuery: (query: string) => void
   setSearchResults: (results: { pageIndex: number; matchIndex: number }[]) => void
   navigateSearchResult: (direction: 'next' | 'prev') => void
+  togglePdfDarkMode: () => void
 }
 
 type EditorStore = EditorState & EditorActions
@@ -310,6 +312,7 @@ export const useEditorStore = create<EditorStore>()(
     searchQuery: '',
     searchResults: [],
     currentSearchIndex: -1,
+    pdfDarkMode: false,
 
     // Document actions
     loadDocument: (pdfData, hash, numPages) => {
@@ -828,6 +831,10 @@ export const useEditorStore = create<EditorStore>()(
           currentPage: result.pageIndex + 1,
         }
       })
+    },
+
+    togglePdfDarkMode: () => {
+      set((state) => ({ pdfDarkMode: !state.pdfDarkMode }))
     },
   }))
 )

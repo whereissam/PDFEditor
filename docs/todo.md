@@ -59,10 +59,10 @@ Build a modern, fast PDF editor for **general consumers** (students, individuals
 ### Phase 6: Polish
 - [x] Keyboard shortcuts (H=highlight, N=note, etc.)
 - [x] Drag-drop file upload
-- [ ] Color picker improvements
-- [ ] Better annotation style controls
-- [ ] Pinch-to-zoom (trackpad support)
-- [ ] Dark mode PDF (canvas invert filter)
+- [x] Color picker improvements (custom colors, hex input, recent colors)
+- [x] Better annotation style controls (font size, font family, stroke width)
+- [x] Pinch-to-zoom (trackpad support via wheel+ctrlKey)
+- [x] Dark mode PDF (canvas invert filter with toggle)
 
 ### Phase 7: Backend (Optional for MVP)
 - [x] Set up Hono backend structure

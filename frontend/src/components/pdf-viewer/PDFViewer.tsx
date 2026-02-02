@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { PageRenderer } from './PageRenderer'
 import { ThumbnailSidebar } from './ThumbnailSidebar'
-import { useViewport, usePageVisibility, useKeyboardNavigation } from '@/hooks/useViewport'
+import { useViewport, usePageVisibility, useKeyboardNavigation, usePinchZoom } from '@/hooks/useViewport'
 import { useEditorStore } from '@/stores/editor-store'
 import type { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,7 @@ export function PDFViewer({ pdfDocument, className }: PDFViewerProps) {
 
   const { registerPage } = usePageVisibility(scrollContainerRef)
   useKeyboardNavigation()
+  usePinchZoom(scrollContainerRef)
 
   // Track page dimensions for fit calculations
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(

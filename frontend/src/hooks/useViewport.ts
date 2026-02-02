@@ -191,6 +191,42 @@ export function usePageVisibility(containerRef: React.RefObject<HTMLElement | nu
   return { registerPage }
 }
 
+// Pinch-to-zoom hook (trackpad support)
+export function usePinchZoom(containerRef: React.RefObject<HTMLElement | null>) {
+  const scale = useEditorStore((s) => s.scale)
+  const setScale = useEditorStore((s) => s.setScale)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleWheel = (e: WheelEvent) => {
+      // Pinch-to-zoom on trackpad sends wheel events with ctrlKey
+      if (e.ctrlKey) {
+        e.preventDefault()
+
+        // Calculate zoom factor based on wheel delta
+        // Smaller delta = finer control
+        const delta = -e.deltaY * 0.01
+        const zoomFactor = Math.pow(1.5, delta)
+
+        // Calculate new scale with bounds
+        const newScale = Math.max(0.1, Math.min(5.0, scale * zoomFactor))
+
+        // Apply new scale
+        setScale(newScale)
+      }
+    }
+
+    // Use passive: false to allow preventDefault
+    container.addEventListener('wheel', handleWheel, { passive: false })
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel)
+    }
+  }, [containerRef, scale, setScale])
+}
+
 // Keyboard navigation hook
 export function useKeyboardNavigation() {
   const setCurrentPage = useEditorStore((s) => s.setCurrentPage)

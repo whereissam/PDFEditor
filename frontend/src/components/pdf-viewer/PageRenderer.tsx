@@ -34,6 +34,7 @@ export const PageRenderer = memo(function PageRenderer({
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null)
 
   const activeTool = useEditorStore((s) => s.activeTool)
+  const pdfDarkMode = useEditorStore((s) => s.pdfDarkMode)
   const pageIndex = pageNumber - 1 // Convert to 0-based index
 
   // Load page
@@ -159,8 +160,9 @@ export const PageRenderer = memo(function PageRenderer({
       ref={containerRef}
       data-page-number={displayPageNumber}
       className={cn(
-        'relative bg-white shadow-lg',
-        isRendering && 'animate-pulse'
+        'relative shadow-lg',
+        isRendering && 'animate-pulse',
+        pdfDarkMode ? 'bg-neutral-800' : 'bg-white'
       )}
       style={{
         width: viewport?.width || 'auto',
@@ -172,7 +174,12 @@ export const PageRenderer = memo(function PageRenderer({
       <canvas
         ref={canvasRef}
         className="absolute top-0 left-0"
-        style={{ width: viewport?.width, height: viewport?.height }}
+        style={{
+          width: viewport?.width,
+          height: viewport?.height,
+          // Dark mode: invert colors and rotate hue to preserve color integrity
+          filter: pdfDarkMode ? 'invert(1) hue-rotate(180deg)' : 'none',
+        }}
       />
 
       {/* Text Layer */}

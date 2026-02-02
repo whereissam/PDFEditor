@@ -18,6 +18,8 @@ import {
   Minimize2,
   ChevronLeft,
   ChevronRight,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +35,7 @@ export const Toolbar = memo(function Toolbar({ onExport, className }: ToolbarPro
   const document = useEditorStore((s) => s.document)
   const isThumbnailSidebarOpen = useEditorStore((s) => s.isThumbnailSidebarOpen)
   const isSearchOpen = useEditorStore((s) => s.isSearchOpen)
+  const pdfDarkMode = useEditorStore((s) => s.pdfDarkMode)
 
   const zoomIn = useEditorStore((s) => s.zoomIn)
   const zoomOut = useEditorStore((s) => s.zoomOut)
@@ -41,6 +44,7 @@ export const Toolbar = memo(function Toolbar({ onExport, className }: ToolbarPro
   const setCurrentPage = useEditorStore((s) => s.setCurrentPage)
   const toggleThumbnailSidebar = useEditorStore((s) => s.toggleThumbnailSidebar)
   const setSearchOpen = useEditorStore((s) => s.setSearchOpen)
+  const togglePdfDarkMode = useEditorStore((s) => s.togglePdfDarkMode)
 
   const { canUndo, canRedo, undo, redo } = useHistory()
 
@@ -184,6 +188,16 @@ export const Toolbar = memo(function Toolbar({ onExport, className }: ToolbarPro
         </Button>
 
         <div className="w-px h-6 bg-border mx-1" />
+
+        {/* Dark mode toggle for PDF */}
+        <Button
+          variant={pdfDarkMode ? 'secondary' : 'ghost'}
+          size="icon"
+          onClick={togglePdfDarkMode}
+          title={pdfDarkMode ? 'Light mode' : 'Dark mode (for reading)'}
+        >
+          {pdfDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
 
         {/* Search */}
         <Button
