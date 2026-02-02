@@ -1,6 +1,8 @@
-import { memo } from 'react'
+import { memo, useCallback } from 'react'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { useEditorStore } from '@/stores/editor-store'
 import { useHistory } from '@/hooks/useHistory'
+import { useOCRContext } from '@/contexts/OCRContext'
 import { AnnotationTools } from './AnnotationTools'
 import { PageTools } from './PageTools'
 import { SearchBar } from './SearchBar'
@@ -20,15 +22,18 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  ScanText,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ToolbarProps {
   onExport?: () => void
+  pdfDocument?: PDFDocumentProxy | null
   className?: string
 }
 
-export const Toolbar = memo(function Toolbar({ onExport, className }: ToolbarProps) {
+export const Toolbar = memo(function Toolbar({ onExport, pdfDocument, className }: ToolbarProps) {
   const scale = useEditorStore((s) => s.scale)
   const scaleMode = useEditorStore((s) => s.scaleMode)
   const currentPage = useEditorStore((s) => s.currentPage)
@@ -47,6 +52,18 @@ export const Toolbar = memo(function Toolbar({ onExport, className }: ToolbarPro
   const togglePdfDarkMode = useEditorStore((s) => s.togglePdfDarkMode)
 
   const { canUndo, canRedo, undo, redo } = useHistory()
+
+  // OCR functionality
+  const { isProcessing: isOCRProcessing, progress: ocrProgress, runOCROnAllPages } = useOCRContext()
+
+  const handleRunOCR = useCallback(async () => {
+    if (!pdfDocument) return
+
+    // For simplicity, run OCR on all pages
+    // In production, you'd want to detect pages without text first
+    const allPages = Array.from({ length: pdfDocument.numPages }, (_, i) => i + 1)
+    await runOCROnAllPages(pdfDocument, allPages, 2)
+  }, [pdfDocument, runOCROnAllPages])
 
   const totalPages = document?.pageOrder.length || 0
   const scalePercent = Math.round(scale * 100)
@@ -208,6 +225,23 @@ export const Toolbar = memo(function Toolbar({ onExport, className }: ToolbarPro
         >
           <Search className="h-4 w-4" />
         </Button>
+
+        {/* OCR */}
+        {pdfDocument && (
+          <Button
+            variant={isOCRProcessing ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={handleRunOCR}
+            disabled={isOCRProcessing}
+            title={isOCRProcessing ? `OCR in progress (${ocrProgress}%)` : 'Run OCR on scanned pages'}
+          >
+            {isOCRProcessing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ScanText className="h-4 w-4" />
+            )}
+          </Button>
+        )}
 
         {/* Export */}
         {onExport && (

@@ -71,8 +71,8 @@ Build a modern, fast PDF editor for **general consumers** (students, individuals
 - [ ] Cloud storage integration (future)
 
 ### Phase 8: Advanced Features
-- [ ] WASM-based OCR with Tesseract.js (make scanned PDFs searchable)
-- [ ] Lazy annotation rendering with Intersection Observer
+- [x] WASM-based OCR with Tesseract.js (make scanned PDFs searchable)
+- [x] Lazy annotation rendering with Intersection Observer
 
 ---
 

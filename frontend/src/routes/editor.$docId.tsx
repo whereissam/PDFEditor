@@ -8,6 +8,7 @@ import { useAutoSave } from '@/hooks/useHistory'
 import { exportPDF, downloadPDF } from '@/lib/pdf/export'
 import { getDocument } from '@/lib/storage'
 import { SearchProvider } from '@/contexts/SearchContext'
+import { OCRProvider } from '@/contexts/OCRContext'
 import { Loader2, AlertCircle, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
@@ -147,11 +148,13 @@ function EditorPage() {
   }
 
   return (
-    <SearchProvider pdfDocument={pdfDocument}>
-      <div className="h-screen flex flex-col bg-background overflow-hidden">
-        <Toolbar onExport={handleExport} />
-        <PDFViewer pdfDocument={pdfDocument} className="flex-1" />
-      </div>
-    </SearchProvider>
+    <OCRProvider>
+      <SearchProvider pdfDocument={pdfDocument}>
+        <div className="h-screen flex flex-col bg-background overflow-hidden">
+          <Toolbar onExport={handleExport} pdfDocument={pdfDocument} />
+          <PDFViewer pdfDocument={pdfDocument} className="flex-1" />
+        </div>
+      </SearchProvider>
+    </OCRProvider>
   )
 }

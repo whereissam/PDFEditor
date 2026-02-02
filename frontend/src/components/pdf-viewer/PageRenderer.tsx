@@ -31,11 +31,40 @@ export const PageRenderer = memo(function PageRenderer({
   const [viewport, setViewport] = useState<PageViewport | null>(null)
   const [isRendering, setIsRendering] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isNearViewport, setIsNearViewport] = useState(false)
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null)
 
   const activeTool = useEditorStore((s) => s.activeTool)
   const pdfDarkMode = useEditorStore((s) => s.pdfDarkMode)
   const pageIndex = pageNumber - 1 // Convert to 0-based index
+
+  // Intersection Observer for lazy rendering
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    // Create observer with rootMargin to pre-load nearby pages
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Page is near viewport (within buffer zone) - render layers
+          setIsNearViewport(entry.isIntersecting || entry.intersectionRatio > 0)
+        })
+      },
+      {
+        // Large rootMargin to detect pages approaching viewport
+        // This allows pre-rendering layers before page becomes visible
+        rootMargin: '200% 0px',
+        threshold: [0, 0.1],
+      }
+    )
+
+    observer.observe(container)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
 
   // Load page
   useEffect(() => {
@@ -65,9 +94,11 @@ export const PageRenderer = memo(function PageRenderer({
     setViewport(newViewport)
   }, [page, scale, rotation])
 
-  // Render page to canvas
+  // Render page to canvas - only when visible or near viewport
   useEffect(() => {
     if (!page || !viewport || !canvasRef.current) return
+    // Only render canvas when page is near viewport
+    if (!isNearViewport) return
 
     // Cancel previous render
     if (renderTaskRef.current) {
@@ -99,7 +130,7 @@ export const PageRenderer = memo(function PageRenderer({
     return () => {
       cancel()
     }
-  }, [page, viewport])
+  }, [page, viewport, isNearViewport])
 
   // Register ref for scroll tracking
   useEffect(() => {
@@ -139,6 +170,10 @@ export const PageRenderer = memo(function PageRenderer({
     }
   }, [activeTool])
 
+  // Should render interactive layers (text, annotations)?
+  // Only render when page is visible or very close to viewport
+  const shouldRenderLayers = isNearViewport
+
   if (error) {
     return (
       <div
@@ -170,7 +205,7 @@ export const PageRenderer = memo(function PageRenderer({
         cursor: getCursor(),
       }}
     >
-      {/* PDF Raster Layer */}
+      {/* PDF Raster Layer - always render placeholder, actual content when near viewport */}
       <canvas
         ref={canvasRef}
         className="absolute top-0 left-0"
@@ -182,17 +217,24 @@ export const PageRenderer = memo(function PageRenderer({
         }}
       />
 
-      {/* Text Layer */}
-      {page && viewport && (
+      {/* Text Layer - lazy rendered */}
+      {shouldRenderLayers && page && viewport && (
         <TextLayer page={page} viewport={viewport} pageIndex={pageIndex} />
       )}
 
-      {/* Annotation Layer */}
-      {viewport && (
+      {/* Annotation Layer - lazy rendered */}
+      {shouldRenderLayers && viewport && (
         <AnnotationLayer
           pageIndex={pageIndex}
           viewport={viewport}
         />
+      )}
+
+      {/* Loading indicator for pages not yet rendered */}
+      {!isNearViewport && viewport && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
+          <span className="text-sm text-muted-foreground">Page {displayPageNumber}</span>
+        </div>
       )}
 
       {/* Page number indicator */}
