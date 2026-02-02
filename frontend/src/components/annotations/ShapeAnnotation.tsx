@@ -1,10 +1,14 @@
 import { useState, useCallback, memo } from 'react'
+import type { PDFPageProxy } from 'pdfjs-dist'
 import type { ShapeAnnotation as ShapeAnnotationType, Rect } from '@/stores/editor-store'
-import { getResizeHandles, applyResize, type ResizeHandle } from '@/lib/geometry'
+import { getResizeHandles, applyResize, rectViewportToPdf, type ResizeHandle } from '@/lib/geometry'
+
+type PageViewport = ReturnType<PDFPageProxy['getViewport']>
 
 interface ShapeAnnotationProps {
   annotation: ShapeAnnotationType
   rect: Rect // Already converted to viewport coordinates
+  viewport: PageViewport // Needed for coordinate conversion on resize
   isSelected: boolean
   onClick: (e: React.MouseEvent) => void
   onUpdate?: (changes: Partial<ShapeAnnotationType>) => void
@@ -13,8 +17,10 @@ interface ShapeAnnotationProps {
 export const ShapeAnnotation = memo(function ShapeAnnotation({
   annotation,
   rect,
+  viewport,
   isSelected,
   onClick,
+  onUpdate,
 }: ShapeAnnotationProps) {
   const { type, style } = annotation
   const [isResizing, setIsResizing] = useState(false)
@@ -50,14 +56,24 @@ export const ShapeAnnotation = memo(function ShapeAnnotation({
 
   // Handle resize end
   const handleResizeEnd = useCallback(() => {
-    if (isResizing && currentRect !== rect) {
-      // Note: Would need to convert back to PDF coordinates before updating
-      // For now, just updating local state
+    if (isResizing && onUpdate) {
+      // Check if rect actually changed
+      const hasChanged =
+        currentRect.x !== rect.x ||
+        currentRect.y !== rect.y ||
+        currentRect.width !== rect.width ||
+        currentRect.height !== rect.height
+
+      if (hasChanged) {
+        // Convert viewport rect back to PDF coordinates
+        const pdfRect = rectViewportToPdf(currentRect, viewport)
+        onUpdate({ rect: pdfRect })
+      }
     }
     setIsResizing(false)
     setActiveHandle(null)
     setDragStart(null)
-  }, [isResizing, currentRect, rect])
+  }, [isResizing, currentRect, rect, viewport, onUpdate])
 
   const displayRect = isResizing ? currentRect : rect
   const handles = isSelected ? getResizeHandles(displayRect, 8) : []

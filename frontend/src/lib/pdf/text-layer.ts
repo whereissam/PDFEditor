@@ -163,6 +163,108 @@ export async function searchInTextContent(
   return matches
 }
 
+// Find text span elements at a given point
+export function findTextSpanAtPoint(
+  container: HTMLElement,
+  x: number,
+  y: number
+): HTMLElement | null {
+  const containerRect = container.getBoundingClientRect()
+  const clientX = containerRect.left + x
+  const clientY = containerRect.top + y
+
+  // Get element at point
+  const element = document.elementFromPoint(clientX, clientY)
+  if (!element) return null
+
+  // Check if it's a text span within the text layer
+  if (element.tagName === 'SPAN' && container.contains(element)) {
+    return element as HTMLElement
+  }
+
+  return null
+}
+
+// Find all text spans between two points (for drag selection)
+export function findTextSpansBetweenPoints(
+  container: HTMLElement,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number
+): HTMLElement[] {
+  const spans = container.querySelectorAll('.textLayer span')
+  const result: HTMLElement[] = []
+  const containerRect = container.getBoundingClientRect()
+
+  // Normalize coordinates (ensure start is before end)
+  const minX = Math.min(startX, endX)
+  const maxX = Math.max(startX, endX)
+  const minY = Math.min(startY, endY)
+  const maxY = Math.max(startY, endY)
+
+  for (const span of spans) {
+    const rect = span.getBoundingClientRect()
+    const spanX = rect.left - containerRect.left
+    const spanY = rect.top - containerRect.top
+    const spanRight = spanX + rect.width
+    const spanBottom = spanY + rect.height
+
+    // Check if span overlaps with selection area
+    const overlapsX = spanRight >= minX && spanX <= maxX
+    const overlapsY = spanBottom >= minY && spanY <= maxY
+
+    // For multi-line selection, include spans that are:
+    // 1. On lines between start and end
+    // 2. On start line after start point
+    // 3. On end line before end point
+    const isInRange =
+      (spanY >= minY && spanBottom <= maxY) || // Fully within vertical range
+      (overlapsY && overlapsX) // Overlaps both horizontally and vertically
+
+    if (isInRange && span.textContent?.trim()) {
+      result.push(span as HTMLElement)
+    }
+  }
+
+  // Sort by position (top to bottom, left to right)
+  result.sort((a, b) => {
+    const rectA = a.getBoundingClientRect()
+    const rectB = b.getBoundingClientRect()
+    const yDiff = rectA.top - rectB.top
+    if (Math.abs(yDiff) > 5) return yDiff // Different lines
+    return rectA.left - rectB.left // Same line, sort by x
+  })
+
+  return result
+}
+
+// Get quad points from text spans with word-boundary snapping
+export function getQuadPointsFromSpans(
+  spans: HTMLElement[],
+  containerRect: DOMRect
+): number[][] {
+  const quadPoints: number[][] = []
+
+  for (const span of spans) {
+    const rect = span.getBoundingClientRect()
+    const x1 = rect.left - containerRect.left
+    const y1 = rect.top - containerRect.top
+    const x2 = rect.right - containerRect.left
+    const y2 = rect.bottom - containerRect.top
+
+    // QuadPoints format: bottom-left, bottom-right, top-right, top-left
+    quadPoints.push([x1, y2, x2, y2, x2, y1, x1, y1])
+  }
+
+  return quadPoints
+}
+
+// Get combined text from spans
+export function getTextFromSpans(spans: HTMLElement[]): string {
+  return spans.map((s) => s.textContent || '').join('')
+}
+
 // CSS for the text layer
 export const textLayerStyles = `
 .textLayer {

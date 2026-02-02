@@ -186,24 +186,51 @@ export const AnnotationLayer = memo(function AnnotationLayer({
     [selectAnnotation]
   )
 
-  // Render drawing preview
+  // Render drawing preview with ghost effect
   const renderDrawingPreview = () => {
     if (!isDrawing) return null
 
+    // Ghost filter ID for this layer
+    const ghostFilterId = `ghost-filter-${pageIndex}`
+
     if (activeTool === 'ink' && inkPoints.length > 1) {
-      const pathData = inkPoints
-        .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-        .join(' ')
+      // Use quadratic bezier for smoother preview
+      let pathData = `M ${inkPoints[0].x} ${inkPoints[0].y}`
+      for (let i = 1; i < inkPoints.length - 1; i++) {
+        const p1 = inkPoints[i]
+        const p2 = inkPoints[i + 1]
+        const midX = (p1.x + p2.x) / 2
+        const midY = (p1.y + p2.y) / 2
+        pathData += ` Q ${p1.x} ${p1.y} ${midX} ${midY}`
+      }
+      // Add last point
+      if (inkPoints.length > 1) {
+        const last = inkPoints[inkPoints.length - 1]
+        pathData += ` L ${last.x} ${last.y}`
+      }
       return (
-        <path
-          d={pathData}
-          fill="none"
-          stroke={toolStyle.color}
-          strokeWidth={toolStyle.strokeWidth}
-          opacity={toolStyle.opacity}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <g className="ghost-preview" filter={`url(#${ghostFilterId})`}>
+          {/* Shadow layer for depth */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke={toolStyle.color}
+            strokeWidth={(toolStyle.strokeWidth || 2) + 2}
+            opacity={0.2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Main stroke */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke={toolStyle.color}
+            strokeWidth={toolStyle.strokeWidth}
+            opacity={toolStyle.opacity}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
       )
     }
 
@@ -217,59 +244,126 @@ export const AnnotationLayer = memo(function AnnotationLayer({
     switch (activeTool) {
       case 'rectangle':
         return (
-          <rect
-            x={minX}
-            y={minY}
-            width={width}
-            height={height}
-            fill={toolStyle.color}
-            fillOpacity={toolStyle.opacity * 0.3}
-            stroke={toolStyle.color}
-            strokeWidth={toolStyle.strokeWidth}
-            opacity={toolStyle.opacity}
-          />
+          <g className="ghost-preview" filter={`url(#${ghostFilterId})`}>
+            {/* Glow effect */}
+            <rect
+              x={minX - 2}
+              y={minY - 2}
+              width={width + 4}
+              height={height + 4}
+              fill="none"
+              stroke={toolStyle.color}
+              strokeWidth={4}
+              opacity={0.15}
+              rx={2}
+            />
+            {/* Main shape */}
+            <rect
+              x={minX}
+              y={minY}
+              width={width}
+              height={height}
+              fill={toolStyle.color}
+              fillOpacity={toolStyle.opacity * 0.2}
+              stroke={toolStyle.color}
+              strokeWidth={toolStyle.strokeWidth}
+              opacity={toolStyle.opacity}
+              strokeDasharray="6 3"
+            />
+            {/* Corner indicators */}
+            <circle cx={minX} cy={minY} r={3} fill={toolStyle.color} opacity={0.8} />
+            <circle cx={minX + width} cy={minY} r={3} fill={toolStyle.color} opacity={0.8} />
+            <circle cx={minX} cy={minY + height} r={3} fill={toolStyle.color} opacity={0.8} />
+            <circle cx={minX + width} cy={minY + height} r={3} fill={toolStyle.color} opacity={0.8} />
+          </g>
         )
       case 'ellipse':
         return (
-          <ellipse
-            cx={minX + width / 2}
-            cy={minY + height / 2}
-            rx={width / 2}
-            ry={height / 2}
-            fill={toolStyle.color}
-            fillOpacity={toolStyle.opacity * 0.3}
-            stroke={toolStyle.color}
-            strokeWidth={toolStyle.strokeWidth}
-            opacity={toolStyle.opacity}
-          />
+          <g className="ghost-preview" filter={`url(#${ghostFilterId})`}>
+            {/* Glow effect */}
+            <ellipse
+              cx={minX + width / 2}
+              cy={minY + height / 2}
+              rx={width / 2 + 2}
+              ry={height / 2 + 2}
+              fill="none"
+              stroke={toolStyle.color}
+              strokeWidth={4}
+              opacity={0.15}
+            />
+            {/* Main shape */}
+            <ellipse
+              cx={minX + width / 2}
+              cy={minY + height / 2}
+              rx={width / 2}
+              ry={height / 2}
+              fill={toolStyle.color}
+              fillOpacity={toolStyle.opacity * 0.2}
+              stroke={toolStyle.color}
+              strokeWidth={toolStyle.strokeWidth}
+              opacity={toolStyle.opacity}
+              strokeDasharray="6 3"
+            />
+          </g>
         )
       case 'arrow':
       case 'line':
         return (
-          <line
-            x1={drawStart.x}
-            y1={drawStart.y}
-            x2={drawCurrent.x}
-            y2={drawCurrent.y}
-            stroke={toolStyle.color}
-            strokeWidth={toolStyle.strokeWidth}
-            opacity={toolStyle.opacity}
-            markerEnd={activeTool === 'arrow' ? 'url(#arrow-head)' : undefined}
-          />
+          <g className="ghost-preview" filter={`url(#${ghostFilterId})`}>
+            {/* Glow line */}
+            <line
+              x1={drawStart.x}
+              y1={drawStart.y}
+              x2={drawCurrent.x}
+              y2={drawCurrent.y}
+              stroke={toolStyle.color}
+              strokeWidth={(toolStyle.strokeWidth || 2) + 4}
+              opacity={0.15}
+              strokeLinecap="round"
+            />
+            {/* Main line */}
+            <line
+              x1={drawStart.x}
+              y1={drawStart.y}
+              x2={drawCurrent.x}
+              y2={drawCurrent.y}
+              stroke={toolStyle.color}
+              strokeWidth={toolStyle.strokeWidth}
+              opacity={toolStyle.opacity}
+              strokeLinecap="round"
+              markerEnd={activeTool === 'arrow' ? 'url(#arrow-head-preview)' : undefined}
+            />
+            {/* End point indicators */}
+            <circle cx={drawStart.x} cy={drawStart.y} r={4} fill={toolStyle.color} opacity={0.6} />
+            <circle cx={drawCurrent.x} cy={drawCurrent.y} r={4} fill={toolStyle.color} opacity={0.6} />
+          </g>
         )
       case 'text':
         return (
-          <rect
-            x={minX}
-            y={minY}
-            width={width}
-            height={height}
-            fill="transparent"
-            stroke={toolStyle.color}
-            strokeWidth={1}
-            strokeDasharray="4"
-            opacity={0.5}
-          />
+          <g className="ghost-preview">
+            <rect
+              x={minX}
+              y={minY}
+              width={width}
+              height={height}
+              fill={toolStyle.color}
+              fillOpacity={0.05}
+              stroke={toolStyle.color}
+              strokeWidth={1}
+              strokeDasharray="4 2"
+              opacity={0.7}
+            />
+            {/* Text cursor indicator */}
+            <line
+              x1={minX + 4}
+              y1={minY + 4}
+              x2={minX + 4}
+              y2={minY + Math.min(height - 4, 20)}
+              stroke={toolStyle.color}
+              strokeWidth={2}
+              opacity={0.8}
+            />
+          </g>
         )
       default:
         return null
@@ -306,6 +400,7 @@ export const AnnotationLayer = memo(function AnnotationLayer({
             key={annotation.id}
             annotation={annotation}
             rect={viewportRect}
+            viewport={viewport}
             isSelected={isSelected}
             onClick={(e) => handleAnnotationClick(annotation.id, e)}
             onUpdate={(changes) => updateAnnotation(annotation.id, changes)}
@@ -424,8 +519,19 @@ export const AnnotationLayer = memo(function AnnotationLayer({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* Arrow marker definition */}
+      {/* Marker and filter definitions */}
       <defs>
+        {/* Ghost glow filter */}
+        <filter id={`ghost-filter-${pageIndex}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+          <feFlood floodColor={toolStyle.color} floodOpacity="0.3" result="color" />
+          <feComposite in="color" in2="blur" operator="in" result="glow" />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        {/* Arrow marker for existing annotations */}
         <marker
           id="arrow-head"
           markerWidth="10"
@@ -436,6 +542,18 @@ export const AnnotationLayer = memo(function AnnotationLayer({
           markerUnits="strokeWidth"
         >
           <path d="M0,0 L0,6 L9,3 z" fill={toolStyle.color} />
+        </marker>
+        {/* Arrow marker for preview (dashed style) */}
+        <marker
+          id="arrow-head-preview"
+          markerWidth="10"
+          markerHeight="10"
+          refX="9"
+          refY="3"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M0,0 L0,6 L9,3 z" fill={toolStyle.color} opacity={toolStyle.opacity} />
         </marker>
       </defs>
 

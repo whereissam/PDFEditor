@@ -24,6 +24,10 @@ Build a modern, fast PDF editor for **general consumers** (students, individuals
 ### Phase 2: Text & Search
 - [x] Add text layer with selection
 - [ ] Implement search functionality (basic structure done, needs full text search)
+- [ ] Web Worker for background text extraction
+- [ ] Build search index with MiniSearch/FlexSearch on PDF load
+- [ ] Contextual snippets (3-4 words before/after match)
+- [ ] Auto-scroll to search result with smooth animation
 
 ### Phase 3: Annotations
 - [x] Add highlight annotation (text-snapped)
@@ -33,31 +37,42 @@ Build a modern, fast PDF editor for **general consumers** (students, individuals
 - [x] Add freehand ink annotation
 - [x] Add text box annotation
 - [x] Implement selection/move for annotations
-- [ ] Implement resize for annotations (partial)
+- [x] Implement resize for annotations
 - [x] Add undo/redo system
+- [x] Ghost preview layer (real-time low-opacity preview while drawing)
+- [x] Snap-to-text highlighting using PDF.js text layer quads
+- [x] Ink path optimization (Ramer-Douglas-Peucker algorithm)
 
 ### Phase 4: Page Operations
 - [x] Create thumbnail sidebar
 - [x] Add page rotation
 - [x] Add page deletion
 - [x] Add page reorder (drag-drop in sidebar)
+- [ ] Smart delete (auto-remove annotations when page is deleted)
 
 ### Phase 5: Export & Persistence
 - [x] Implement PDF export with pdf-lib
 - [x] Add IndexedDB persistence with Dexie.js
 - [x] Auto-save functionality
+- [ ] Fix page reorder export (copyPages with new order)
 
 ### Phase 6: Polish
 - [x] Keyboard shortcuts (H=highlight, N=note, etc.)
 - [x] Drag-drop file upload
 - [ ] Color picker improvements
 - [ ] Better annotation style controls
+- [ ] Pinch-to-zoom (trackpad support)
+- [ ] Dark mode PDF (canvas invert filter)
 
 ### Phase 7: Backend (Optional for MVP)
 - [x] Set up Hono backend structure
 - [x] Upload endpoint
 - [x] Document CRUD routes
 - [ ] Cloud storage integration (future)
+
+### Phase 8: Advanced Features
+- [ ] WASM-based OCR with Tesseract.js (make scanned PDFs searchable)
+- [ ] Lazy annotation rendering with Intersection Observer
 
 ---
 
@@ -66,13 +81,27 @@ Build a modern, fast PDF editor for **general consumers** (students, individuals
 ### 4-Layer Viewer Stack
 ```
 ┌─────────────────────────────────────────┐
-│  Interaction Layer (hit-testing, cursor)│
-├─────────────────────────────────────────┤
+│  Interaction Layer (hit-testing, cursor)│  ← Single global event listener
+├─────────────────────────────────────────┤     delegates to page index
 │  Annotation Overlay (SVG - shapes, ink) │
 ├─────────────────────────────────────────┤
 │  Text Layer (DOM - selectable text)     │
 ├─────────────────────────────────────────┤
 │  PDF Raster Layer (Canvas - PDF.js)     │
+└─────────────────────────────────────────┘
+```
+
+**Performance Note:** The Interaction Layer should be a single global listener that delegates events down to the specific page index, avoiding per-page event listeners for 100+ page documents.
+
+### Ghost Preview Layer
+For "delightful UX", render annotations in real-time while drawing:
+```
+┌─────────────────────────────────────────┐
+│  Ghost Layer (temp canvas/SVG group)    │  ← Low-opacity preview
+├─────────────────────────────────────────┤
+│  Interaction Layer                      │
+├─────────────────────────────────────────┤
+│  ...rest of stack                       │
 └─────────────────────────────────────────┘
 ```
 
@@ -105,6 +134,83 @@ interface Annotation {
 }
 ```
 
+### Ink Path Optimization
+For freehand annotations, apply **Ramer-Douglas-Peucker** before saving:
+```typescript
+// Before: 1000+ points from mousemove events
+// After: ~50 essential points, same visual quality
+const optimizedPath = simplifyPath(rawPoints, epsilon: 1.5)
+```
+
+---
+
+## Technical Implementation Notes
+
+### Snap-to-Text Highlighting
+Use PDF.js text layer data for precise highlighting:
+```typescript
+// In highlight mode:
+// 1. Get text layer spans from PDF.js
+// 2. Find nearest span to cursor position
+// 3. Snap highlight geometry to span's bounding box (quads)
+// 4. Result: Crisp, text-aligned highlights instead of jittery mouse-following
+```
+
+### Advanced Search Architecture
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Main Thread                          │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐ │
+│  │ SearchBar   │───▶│ Zustand     │◀───│ TanStack    │ │
+│  │ Component   │    │ Store       │    │ Query       │ │
+│  └─────────────┘    └──────┬──────┘    └─────────────┘ │
+└────────────────────────────┼────────────────────────────┘
+                             │ postMessage
+                    ┌────────▼────────┐
+                    │   Web Worker    │
+                    │  ┌───────────┐  │
+                    │  │ MiniSearch│  │  ← Index built on PDF load
+                    │  │ /FlexSearch│  │
+                    │  └───────────┘  │
+                    └─────────────────┘
+```
+
+### Lazy Annotation Rendering
+For 100+ page documents, use Intersection Observer:
+```typescript
+// Only mount AnnotationLayer + TextLayer for visible pages
+const visiblePages = currentPage ± 2  // Buffer of 2 pages
+
+// Zustand store holds ALL annotation data
+// PageRenderer receives only annotations where pageIndex in visiblePages
+```
+
+### Page Reorder Export Fix
+```typescript
+// Solution for pdf-lib page reordering:
+async function exportWithReorder(originalBytes: Uint8Array, newOrder: number[]) {
+  const srcDoc = await PDFDocument.load(originalBytes)
+  const newDoc = await PDFDocument.create()
+
+  // Copy pages in the new order defined by Zustand store
+  const copiedPages = await newDoc.copyPages(srcDoc, newOrder)
+  copiedPages.forEach(page => newDoc.addPage(page))
+
+  // Apply annotations to the new pages
+  await applyAnnotations(newDoc, annotations)
+
+  return newDoc.save()
+}
+```
+
+### Dark Mode Implementation
+```css
+/* Simple canvas invert for late-night studying */
+.pdf-canvas.dark-mode {
+  filter: invert(1) hue-rotate(180deg);
+}
+```
+
 ---
 
 ## Project Structure
@@ -121,6 +227,7 @@ pdfeditor/
 │       │   │   ├── PageRenderer.tsx      # Single page (canvas + layers)
 │       │   │   ├── TextLayer.tsx         # Selectable text overlay
 │       │   │   ├── AnnotationLayer.tsx   # SVG annotation overlay
+│       │   │   ├── GhostLayer.tsx        # Real-time drawing preview
 │       │   │   └── ThumbnailSidebar.tsx  # Page thumbnails
 │       │   ├── toolbar/
 │       │   │   ├── Toolbar.tsx           # Main toolbar
@@ -136,7 +243,8 @@ pdfeditor/
 │       │   ├── usePDFDocument.ts         # PDF.js document loading
 │       │   ├── useAnnotations.ts         # Annotation state & ops
 │       │   ├── useViewport.ts            # Zoom, pan, scroll
-│       │   └── useHistory.ts             # Undo/redo
+│       │   ├── useHistory.ts             # Undo/redo
+│       │   └── useVisiblePages.ts        # Intersection Observer for lazy rendering
 │       ├── stores/
 │       │   └── editor-store.ts           # Zustand store
 │       ├── lib/
@@ -146,7 +254,10 @@ pdfeditor/
 │       │   │   ├── text-layer.ts         # Text extraction
 │       │   │   └── export.ts             # pdf-lib export
 │       │   ├── geometry.ts               # Coordinate transforms
+│       │   ├── path-simplify.ts          # Ramer-Douglas-Peucker algorithm
 │       │   └── storage.ts                # IndexedDB (Dexie)
+│       ├── workers/
+│       │   └── search-worker.ts          # Background text indexing
 │       └── routes/
 │           ├── index.tsx                 # Landing/upload
 │           └── editor.$docId.tsx         # Editor page
@@ -165,6 +276,23 @@ pdfeditor/
 
 ---
 
+## Priority Matrix
+
+| Task | Category | Impact | Effort | Why |
+|------|----------|--------|--------|-----|
+| Ghost Preview Layer | UX | High | Low | Instant feedback, feels "delightful" |
+| Pinch-to-Zoom | UX | High | Low | Essential for students on trackpads |
+| Snap-to-Text Highlighting | UX | High | Medium | Eliminates jittery highlighting |
+| Web Worker Search | Performance | High | Medium | Non-blocking text extraction |
+| Lazy Annotation Rendering | Performance | High | Medium | Critical for 100+ page docs |
+| Dark Mode PDF | UX | Medium | Low | Late-night studying feature |
+| Ink Path Optimization | Performance | Medium | Low | Reduces file size significantly |
+| Smart Delete | UX | Medium | Low | Prevents orphaned annotations |
+| Page Reorder Export Fix | Bug Fix | High | Low | Completes page operations feature |
+| WASM OCR | Feature | Medium | High | Makes scanned PDFs searchable |
+
+---
+
 ## Verification Checklist
 
 ### Manual Testing
@@ -175,6 +303,9 @@ pdfeditor/
 - [ ] Reorder thumbnails, rotate, delete page
 - [ ] Download PDF with annotations visible in Adobe Reader
 - [ ] Close tab, reopen, document state restored
+- [ ] Pinch-to-zoom on trackpad works smoothly
+- [ ] Dark mode toggle inverts PDF correctly
+- [ ] Search finds text across all pages with snippets
 
 ### Test Files to Use
 - Simple 1-page PDF
@@ -185,12 +316,14 @@ pdfeditor/
 
 ---
 
-## Known Issues
+## Known Issues & Solutions
 
-1. **Text layer rendering**: The `renderTextLayer` API has compatibility issues with PDF.js types
-2. **Annotation resize**: Resize handles are displayed but actual resize saving needs work
-3. **Search**: Basic structure exists but full-text search across pages needs implementation
-4. **Export reordering**: Page reordering is not preserved in PDF export (pdf-lib limitation)
+| Issue | Status | Solution |
+|-------|--------|----------|
+| Text layer rendering | Open | `renderTextLayer` API has compatibility issues with PDF.js types |
+| Annotation resize | Partial | Resize handles displayed, actual resize saving needs work |
+| Search | In Progress | Use Web Worker + MiniSearch for full-text search across pages |
+| Export reordering | **Solved** | Use `copyPages(srcDoc, newOrder)` to create new doc in correct order |
 
 ---
 
@@ -205,3 +338,6 @@ pdfeditor/
 - [ ] Outline/TOC display
 - [ ] Print with annotations
 - [ ] Annotation comments/replies
+- [ ] AI-powered text summarization
+- [ ] Voice annotations
+- [ ] Measurement tools (ruler, area)
