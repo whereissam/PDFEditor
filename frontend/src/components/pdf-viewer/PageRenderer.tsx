@@ -52,9 +52,11 @@ export const PageRenderer = memo(function PageRenderer({
         })
       },
       {
-        // Large rootMargin to detect pages approaching viewport
-        // This allows pre-rendering layers before page becomes visible
-        rootMargin: '200% 0px',
+        // Use pixel-based rootMargin for consistent pre-loading behavior.
+        // Note: percentage-based rootMargin is resolved against root WIDTH (not height),
+        // making it unreliable for vertical scrolling scenarios.
+        // 1500px provides ~2 viewport heights of buffer on typical screens.
+        rootMargin: '1500px 0px',
         threshold: [0, 0.1],
       }
     )
