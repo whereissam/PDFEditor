@@ -1,120 +1,195 @@
-# React Vite TanStack Starter Template
+# PDF Editor
 
-A modern React starter template with TypeScript, Vite, TanStack Router, TanStack React Query, TailwindCSS v4, and shadcn/ui components.
+A modern, fast PDF editor for general consumers (students, individuals) with focus on annotation, page operations, and delightful UX. Built entirely in the browser with no server-side PDF processing required.
 
 ## Features
 
-- ⚡️ **Vite** - Lightning fast build tool
-- ⚛️ **React 19** - Latest React with modern features
-- 🔷 **TypeScript** - Type safety and better DX
-- 🎨 **TailwindCSS v4** - Utility-first CSS framework
-- 🧩 **shadcn/ui** - Beautiful, accessible components
-- 🚦 **TanStack Router** - Type-safe routing
-- 🔄 **TanStack React Query** - Data fetching and caching
-- 🎯 **React Router DOM** - Additional routing capabilities
-- 📏 **ESLint** - Code linting and formatting
+### Core Features
+- **PDF Viewing** - Smooth scrolling, zoom (pinch-to-zoom supported), fit-to-width/page
+- **Text Selection** - Select and copy text from PDFs
+- **Full-Text Search** - Fast search with contextual snippets and result navigation
+- **Dark Mode** - Invert PDF colors for comfortable night reading
+
+### Annotations
+- **Highlight/Underline/Strikethrough** - Text-snapped markup with color customization
+- **Shapes** - Rectangle, ellipse, arrow, line with resize handles
+- **Sticky Notes** - Pop-up notes with editable content
+- **Freehand Ink** - Draw with optimized path compression
+- **Text Box** - Add custom text with font controls
+
+### Page Operations
+- **Thumbnail Sidebar** - Visual page navigation with drag-drop reordering
+- **Page Rotation** - Rotate individual pages 90°
+- **Page Deletion** - Remove unwanted pages
+
+### Advanced Features
+- **OCR** - Extract text from scanned PDFs using Tesseract.js
+- **Undo/Redo** - Full history with Ctrl+Z/Ctrl+Shift+Z
+- **Auto-Save** - Automatic persistence to IndexedDB
+- **Export** - Download annotated PDF with embedded annotations
+
+## Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| React 19 | UI framework |
+| TypeScript | Type safety |
+| Vite | Build tool |
+| Tailwind CSS v4 | Styling |
+| shadcn/ui | Component library |
+| TanStack Router | Routing |
+| Zustand | State management |
+| PDF.js | PDF rendering |
+| pdf-lib | PDF export |
+| MiniSearch | Full-text search |
+| Tesseract.js | OCR |
+| Dexie.js | IndexedDB wrapper |
 
 ## Getting Started
 
 ### Prerequisites
-
-- Node.js 20.19.0+ or 22.12.0+
-- npm, yarn, or bun
+- Node.js 20+ or Bun 1.0+
 
 ### Installation
 
-1. Clone the repository:
 ```bash
+# Clone the repository
 git clone <repository-url>
-cd React-Vite-Tanstack-Starter-Template
+cd pdfeditor/frontend
+
+# Install dependencies
+bun install
+
+# Start development server
+bun run dev
 ```
 
-2. Install dependencies:
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Building for Production
+
 ```bash
-npm install
+bun run build
+bun run preview
 ```
-
-3. Start the development server:
-```bash
-npm run dev
-```
-
-4. Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   └── ui/              # shadcn/ui components
+│   ├── pdf-viewer/          # PDF rendering components
+│   │   ├── PDFViewer.tsx    # Main viewer container
+│   │   ├── PageRenderer.tsx # Individual page renderer
+│   │   ├── TextLayer.tsx    # Selectable text overlay
+│   │   ├── AnnotationLayer.tsx # SVG annotation overlay
+│   │   └── ThumbnailSidebar.tsx
+│   ├── toolbar/             # Toolbar components
+│   │   ├── Toolbar.tsx
+│   │   ├── AnnotationTools.tsx
+│   │   ├── PageTools.tsx
+│   │   └── SearchBar.tsx
+│   ├── annotations/         # Annotation renderers
+│   └── ui/                  # shadcn/ui components
+│
+├── contexts/
+│   ├── SearchContext.tsx    # Search with Web Worker
+│   └── OCRContext.tsx       # Tesseract.js integration
+│
+├── hooks/
+│   ├── usePDFDocument.ts    # PDF.js loading
+│   ├── useAnnotations.ts    # Annotation CRUD
+│   ├── useViewport.ts       # Zoom, scroll, gestures
+│   └── useHistory.ts        # Undo/redo, auto-save
+│
+├── stores/
+│   └── editor-store.ts      # Zustand state
+│
 ├── lib/
-│   └── utils.ts         # Utility functions
-├── pages/               # Page components
-├── routes/              # TanStack Router file-based routes
-│   ├── __root.tsx       # Root route
-│   └── index.tsx        # Home route
-├── App.tsx
-├── main.tsx
-└── index.css
+│   ├── pdf/                 # PDF utilities
+│   │   ├── loader.ts        # PDF.js wrapper
+│   │   ├── renderer.ts      # Page rendering
+│   │   ├── text-layer.ts    # Text extraction
+│   │   └── export.ts        # pdf-lib export
+│   ├── geometry.ts          # Coordinate transforms
+│   └── storage.ts           # IndexedDB persistence
+│
+├── workers/
+│   └── search-worker.ts     # MiniSearch indexing
+│
+└── routes/
+    ├── index.tsx            # Landing page
+    └── editor.$docId.tsx    # Editor page
 ```
 
-## Tech Stack
+## Keyboard Shortcuts
 
-- **React 19** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **TanStack Router** - Type-safe routing with file-based routing
-- **TanStack React Query** - Server state management
-- **React Router DOM** - Additional routing utilities
-- **TailwindCSS v4** - Utility-first CSS framework
-- **shadcn/ui** - Component library
-- **Radix UI** - Headless UI primitives
-- **Lucide React** - Icon library
+| Shortcut | Action |
+|----------|--------|
+| `V` / `Escape` | Select tool |
+| `H` | Highlight |
+| `U` | Underline |
+| `S` | Strikethrough |
+| `N` | Sticky note |
+| `R` | Rectangle |
+| `O` | Ellipse |
+| `A` | Arrow |
+| `L` | Line |
+| `P` | Pen (ink) |
+| `T` | Text box |
+| `Cmd/Ctrl + Z` | Undo |
+| `Cmd/Ctrl + Shift + Z` | Redo |
+| `Cmd/Ctrl + F` | Search |
+| `Cmd/Ctrl + +/-` | Zoom in/out |
+| `Delete` | Delete selected |
 
-## Adding Components
+## Architecture
 
-Add new shadcn/ui components:
+The PDF viewer uses a 4-layer stack:
+
+```
+┌─────────────────────────────────────┐
+│ Interaction Layer (events)          │
+├─────────────────────────────────────┤
+│ Annotation Layer (SVG)              │
+├─────────────────────────────────────┤
+│ Text Layer (DOM)                    │
+├─────────────────────────────────────┤
+│ PDF Raster Layer (Canvas)           │
+└─────────────────────────────────────┘
+```
+
+See [docs/architecture.md](../docs/architecture.md) for detailed documentation.
+
+## Performance
+
+- **Lazy Rendering** - Only pages near viewport render text/annotation layers
+- **Web Worker Search** - Text indexing doesn't block UI
+- **Ink Optimization** - Ramer-Douglas-Peucker algorithm reduces path points
+- **Device Pixel Ratio** - Sharp rendering on HiDPI displays
+
+## Documentation
+
+- [Architecture](../docs/architecture.md) - System design and data flow
+- [API Reference](../docs/api.md) - Component and hook documentation
+- [TODO](../docs/todo.md) - Implementation roadmap
+
+## Scripts
 
 ```bash
-npx shadcn@latest add button
-npx shadcn@latest add card
+bun run dev      # Start dev server
+bun run build    # Build for production
+bun run preview  # Preview production build
+bun run lint     # Run ESLint
 ```
 
-## Routing
+## Browser Support
 
-This template uses TanStack Router with file-based routing. Add new routes by creating files in the `src/routes/` directory:
-
-- `src/routes/index.tsx` - Home page (/)
-- `src/routes/about.tsx` - About page (/about)
-- `src/routes/blog/index.tsx` - Blog index (/blog)
-- `src/routes/blog/$slug.tsx` - Blog post (/blog/my-post)
-
-## Styling
-
-TailwindCSS v4 is configured with the new PostCSS plugin. The configuration supports:
-
-- Custom CSS variables
-- Component variants with `class-variance-authority`
-- Utility merging with `tailwind-merge`
-- Animations with `tailwindcss-animate`
-
-## Development
-
-The template includes:
-
-- Hot module replacement (HMR) with React Fast Refresh
-- TypeScript type checking
-- ESLint for code quality
-- TanStack Router DevTools (development only)
-- Automatic route generation
+- Chrome 90+
+- Firefox 90+
+- Safari 15+
+- Edge 90+
 
 ## License
 
-MIT License - feel free to use this template for your projects!
+MIT License

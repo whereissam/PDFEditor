@@ -213,12 +213,22 @@ async function exportWithReorder(originalBytes: Uint8Array, newOrder: number[]) 
 
 ---
 
+## Documentation
+
+- [Architecture](./architecture.md) - System design, data flow, and performance optimizations
+- [API Reference](./api.md) - Component props, hooks, contexts, and type definitions
+- [TODO](./todo.md) - Implementation roadmap (this file)
+
+---
+
 ## Project Structure
 
 ```
 pdfeditor/
 ├── docs/
-│   └── todo.md                           # This file
+│   ├── todo.md                           # Implementation roadmap
+│   ├── architecture.md                   # System architecture
+│   └── api.md                            # API reference
 ├── frontend/
 │   └── src/
 │       ├── components/
