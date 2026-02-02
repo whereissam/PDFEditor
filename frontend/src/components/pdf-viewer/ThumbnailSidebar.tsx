@@ -2,7 +2,10 @@ import { useRef, useEffect, useState, useCallback, memo } from 'react'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { renderThumbnail } from '@/lib/pdf/renderer'
 import { useEditorStore } from '@/stores/editor-store'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
+import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DndContext,
   closestCenter,
@@ -123,6 +126,8 @@ export function ThumbnailSidebar({
   onPageClick,
 }: ThumbnailSidebarProps) {
   const reorderPages = useEditorStore((s) => s.reorderPages)
+  const closeMobileSidebar = useEditorStore((s) => s.closeMobileSidebar)
+  const isMobile = useIsMobile()
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -155,10 +160,30 @@ export function ThumbnailSidebar({
     [pageIndices, reorderPages]
   )
 
-  return (
-    <div className="w-[160px] min-w-[160px] h-full overflow-y-auto border-r border-border bg-background">
-      <div className="p-2 border-b border-border">
+  const handlePageClick = useCallback(
+    (pageIndex: number) => {
+      onPageClick(pageIndex)
+      if (isMobile) {
+        closeMobileSidebar()
+      }
+    },
+    [onPageClick, isMobile, closeMobileSidebar]
+  )
+
+  const sidebarContent = (
+    <>
+      <div className="p-2 border-b border-border flex items-center justify-between">
         <h3 className="text-sm font-medium text-foreground">Pages</h3>
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={closeMobileSidebar}
+            className="h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       <DndContext
         sensors={sensors}
@@ -177,12 +202,34 @@ export function ThumbnailSidebar({
                 pageIndex={pageIndex}
                 pageNumber={displayIndex + 1}
                 isActive={currentPage === displayIndex + 1}
-                onClick={() => onPageClick(pageIndex)}
+                onClick={() => handlePageClick(pageIndex)}
               />
             ))}
           </div>
         </SortableContext>
       </DndContext>
+    </>
+  )
+
+  // Mobile: Fixed overlay panel
+  if (isMobile) {
+    return (
+      <div
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-[200px] bg-background border-r border-border',
+          'transform transition-transform duration-300 ease-in-out',
+          'overflow-y-auto safe-area-inset-top'
+        )}
+      >
+        {sidebarContent}
+      </div>
+    )
+  }
+
+  // Desktop: Standard sidebar
+  return (
+    <div className="w-[160px] min-w-[160px] h-full overflow-y-auto border-r border-border bg-background">
+      {sidebarContent}
     </div>
   )
 }

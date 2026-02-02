@@ -3,6 +3,7 @@ import { PageRenderer } from './PageRenderer'
 import { ThumbnailSidebar } from './ThumbnailSidebar'
 import { useViewport, usePageVisibility, useKeyboardNavigation, usePinchZoom } from '@/hooks/useViewport'
 import { useEditorStore } from '@/stores/editor-store'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import type { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api'
 import { cn } from '@/lib/utils'
 
@@ -18,8 +19,10 @@ export function PDFViewer({ pdfDocument, className }: PDFViewerProps) {
 
   const document = useEditorStore((s) => s.document)
   const isThumbnailSidebarOpen = useEditorStore((s) => s.isThumbnailSidebarOpen)
+  const closeMobileSidebar = useEditorStore((s) => s.closeMobileSidebar)
   const currentPage = useEditorStore((s) => s.currentPage)
   const setScale = useEditorStore((s) => s.setScale)
+  const isMobile = useIsMobile()
 
   const { registerPage } = usePageVisibility(scrollContainerRef)
   useKeyboardNavigation()
@@ -99,8 +102,17 @@ export function PDFViewer({ pdfDocument, className }: PDFViewerProps) {
   return (
     <div
       ref={containerRef as React.RefObject<HTMLDivElement>}
-      className={cn('flex h-full w-full overflow-hidden bg-muted', className)}
+      className={cn('flex h-full w-full overflow-hidden bg-muted relative', className)}
     >
+      {/* Mobile Backdrop - shown when sidebar is open on mobile */}
+      {isMobile && isThumbnailSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 transition-opacity"
+          onClick={closeMobileSidebar}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Thumbnail Sidebar */}
       {isThumbnailSidebarOpen && (
         <ThumbnailSidebar

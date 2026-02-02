@@ -184,5 +184,56 @@
 @layer base {
   body {
     letter-spacing: var(--tracking-normal);
+  }
+
+  /* Mobile optimizations */
+  html {
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior: none;
+    /* Support for safe areas on notched devices */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Prevent text selection on touch interactions */
+  .touch-none {
+    touch-action: none;
+  }
+
+  /* Safe area utilities */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-inset-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Prevent iOS bounce scroll on fixed elements */
+  .no-bounce {
+    overscroll-behavior: contain;
+  }
+
+  /* Mobile tap highlight removal */
+  @media (pointer: coarse) {
+    * {
+      -webkit-tap-highlight-color: transparent;
     }
+
+    /* Larger touch targets on mobile */
+    button,
+    [role="button"],
+    input[type="button"],
+    input[type="submit"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
 }

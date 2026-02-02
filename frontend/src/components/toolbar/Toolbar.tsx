@@ -3,9 +3,11 @@ import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { useEditorStore } from '@/stores/editor-store'
 import { useHistory } from '@/hooks/useHistory'
 import { useOCRContext } from '@/contexts/OCRContext'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { AnnotationTools } from './AnnotationTools'
 import { PageTools } from './PageTools'
 import { SearchBar } from './SearchBar'
+import { MobileToolbar } from './MobileToolbar'
 import { Button } from '@/components/ui/button'
 import {
   ZoomIn,
@@ -34,6 +36,17 @@ interface ToolbarProps {
 }
 
 export const Toolbar = memo(function Toolbar({ onExport, pdfDocument, className }: ToolbarProps) {
+  const isMobile = useIsMobile()
+
+  // Render mobile toolbar for mobile devices
+  if (isMobile) {
+    return <MobileToolbar onExport={onExport} pdfDocument={pdfDocument} />
+  }
+
+  return <DesktopToolbar onExport={onExport} pdfDocument={pdfDocument} className={className} />
+})
+
+const DesktopToolbar = memo(function DesktopToolbar({ onExport, pdfDocument, className }: ToolbarProps) {
   const scale = useEditorStore((s) => s.scale)
   const scaleMode = useEditorStore((s) => s.scaleMode)
   const currentPage = useEditorStore((s) => s.currentPage)
@@ -261,3 +274,6 @@ export const Toolbar = memo(function Toolbar({ onExport, pdfDocument, className 
     </div>
   )
 })
+
+// Re-export Toolbar component name for consistency
+Toolbar.displayName = 'Toolbar'

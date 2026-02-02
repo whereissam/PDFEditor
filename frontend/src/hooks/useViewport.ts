@@ -191,15 +191,27 @@ export function usePageVisibility(containerRef: React.RefObject<HTMLElement | nu
   return { registerPage }
 }
 
-// Pinch-to-zoom hook (trackpad support)
+// Pinch-to-zoom hook (trackpad + touch support)
 export function usePinchZoom(containerRef: React.RefObject<HTMLElement | null>) {
   const scale = useEditorStore((s) => s.scale)
   const setScale = useEditorStore((s) => s.setScale)
+
+  // Refs for touch pinch zoom
+  const initialTouchDistanceRef = useRef<number | null>(null)
+  const initialTouchScaleRef = useRef<number>(1)
+
+  const getDistance = useCallback((touches: TouchList): number => {
+    if (touches.length < 2) return 0
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
+    // Trackpad pinch-to-zoom via wheel events
     const handleWheel = (e: WheelEvent) => {
       // Pinch-to-zoom on trackpad sends wheel events with ctrlKey
       if (e.ctrlKey) {
@@ -218,13 +230,46 @@ export function usePinchZoom(containerRef: React.RefObject<HTMLElement | null>) 
       }
     }
 
+    // Touch pinch-to-zoom handlers
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        initialTouchDistanceRef.current = getDistance(e.touches)
+        initialTouchScaleRef.current = scale
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || initialTouchDistanceRef.current === null) return
+
+      // Prevent default to stop page scrolling during pinch
+      e.preventDefault()
+
+      const currentDistance = getDistance(e.touches)
+      const ratio = currentDistance / initialTouchDistanceRef.current
+      const newScale = Math.max(0.1, Math.min(5.0, initialTouchScaleRef.current * ratio))
+
+      setScale(newScale)
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        initialTouchDistanceRef.current = null
+      }
+    }
+
     // Use passive: false to allow preventDefault
     container.addEventListener('wheel', handleWheel, { passive: false })
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+    container.addEventListener('touchend', handleTouchEnd, { passive: true })
 
     return () => {
       container.removeEventListener('wheel', handleWheel)
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', handleTouchMove)
+      container.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [containerRef, scale, setScale])
+  }, [containerRef, scale, setScale, getDistance])
 }
 
 // Keyboard navigation hook

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, useState, memo } from 'react'
 import { useEditorStore } from '@/stores/editor-store'
 import { useSearchContext } from '@/contexts/SearchContext'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { Button } from '@/components/ui/button'
 import { X, ChevronUp, ChevronDown, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -12,6 +13,7 @@ export const SearchBar = memo(function SearchBar() {
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isMobile = useIsMobile()
 
   const setSearchOpen = useEditorStore((s) => s.setSearchOpen)
 
@@ -149,10 +151,16 @@ export const SearchBar = memo(function SearchBar() {
         : `${currentIndex + 1} of ${totalResults}`
 
   return (
-    <div className="absolute top-full right-2 mt-1 z-50" ref={resultsRef}>
+    <div
+      className={cn(
+        'absolute top-full mt-1 z-50',
+        isMobile ? 'left-2 right-2' : 'right-2'
+      )}
+      ref={resultsRef}
+    >
       {/* Search input bar */}
       <div className="flex items-center gap-2 p-2 bg-background border border-border rounded-lg shadow-lg">
-        <div className="relative">
+        <div className="relative flex-1 sm:flex-none">
           <input
             ref={inputRef}
             type="text"
@@ -161,7 +169,11 @@ export const SearchBar = memo(function SearchBar() {
             onKeyDown={handleKeyDown}
             onFocus={() => query.trim() && setShowResults(true)}
             placeholder="Search in document..."
-            className="w-64 px-3 py-1.5 text-sm border border-border rounded bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            className={cn(
+              'px-3 py-1.5 text-sm border border-border rounded bg-background',
+              'focus:outline-none focus:ring-2 focus:ring-primary',
+              isMobile ? 'w-full' : 'w-64'
+            )}
           />
           {isLoading && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2">

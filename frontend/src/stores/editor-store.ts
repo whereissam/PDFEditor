@@ -215,6 +215,10 @@ export interface EditorState {
   searchResults: { pageIndex: number; matchIndex: number }[]
   currentSearchIndex: number
   pdfDarkMode: boolean
+
+  // Mobile UI State
+  isMobileToolsPanelOpen: boolean
+  activeMobilePanel: 'none' | 'tools' | 'more' | 'pages'
 }
 
 // Actions
@@ -267,6 +271,11 @@ export interface EditorActions {
   setSearchResults: (results: { pageIndex: number; matchIndex: number }[]) => void
   navigateSearchResult: (direction: 'next' | 'prev') => void
   togglePdfDarkMode: () => void
+
+  // Mobile UI actions
+  setMobileToolsPanelOpen: (open: boolean) => void
+  setActiveMobilePanel: (panel: 'none' | 'tools' | 'more' | 'pages') => void
+  closeMobileSidebar: () => void
 }
 
 type EditorStore = EditorState & EditorActions
@@ -313,6 +322,8 @@ export const useEditorStore = create<EditorStore>()(
     searchResults: [],
     currentSearchIndex: -1,
     pdfDarkMode: false,
+    isMobileToolsPanelOpen: false,
+    activeMobilePanel: 'none',
 
     // Document actions
     loadDocument: (pdfData, hash, numPages) => {
@@ -836,5 +847,12 @@ export const useEditorStore = create<EditorStore>()(
     togglePdfDarkMode: () => {
       set((state) => ({ pdfDarkMode: !state.pdfDarkMode }))
     },
+
+    // Mobile UI actions
+    setMobileToolsPanelOpen: (open) => set({ isMobileToolsPanelOpen: open }),
+
+    setActiveMobilePanel: (panel) => set({ activeMobilePanel: panel }),
+
+    closeMobileSidebar: () => set({ isThumbnailSidebarOpen: false }),
   }))
 )

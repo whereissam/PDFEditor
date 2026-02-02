@@ -5,12 +5,14 @@ import { Toolbar } from '@/components/toolbar/Toolbar'
 import { usePDFDocument } from '@/hooks/usePDFDocument'
 import { useEditorStore } from '@/stores/editor-store'
 import { useAutoSave } from '@/hooks/useHistory'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { exportPDF, downloadPDF } from '@/lib/pdf/export'
 import { getDocument } from '@/lib/storage'
 import { SearchProvider } from '@/contexts/SearchContext'
 import { OCRProvider } from '@/contexts/OCRContext'
 import { Loader2, AlertCircle, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 
 export const Route = createFileRoute('/editor/$docId')({
@@ -29,6 +31,7 @@ function EditorPage() {
   const storeDocument = useEditorStore((s) => s.document)
   const annotations = useEditorStore((s) => s.annotations)
   const isLoading = useEditorStore((s) => s.isLoading)
+  const isMobile = useIsMobile()
 
   // Auto-save annotations
   useAutoSave(docId, 2000)
@@ -150,9 +153,18 @@ function EditorPage() {
   return (
     <OCRProvider>
       <SearchProvider pdfDocument={pdfDocument}>
-        <div className="h-screen flex flex-col bg-background overflow-hidden">
-          <Toolbar onExport={handleExport} pdfDocument={pdfDocument} />
+        <div
+          className={cn(
+            'h-screen flex flex-col bg-background overflow-hidden',
+            // Add bottom padding on mobile for the fixed toolbar
+            isMobile && 'pb-[72px]'
+          )}
+        >
+          {/* On mobile, Toolbar renders as fixed bottom bar, so we don't need it in flow */}
+          {!isMobile && <Toolbar onExport={handleExport} pdfDocument={pdfDocument} />}
           <PDFViewer pdfDocument={pdfDocument} className="flex-1" />
+          {/* Mobile toolbar is fixed positioned */}
+          {isMobile && <Toolbar onExport={handleExport} pdfDocument={pdfDocument} />}
         </div>
       </SearchProvider>
     </OCRProvider>
