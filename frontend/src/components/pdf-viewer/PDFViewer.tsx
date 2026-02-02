@@ -67,6 +67,20 @@ export function PDFViewer({ pdfDocument, className }: PDFViewerProps) {
   // Get visible pages
   const visiblePageIndices = document?.pageOrder || []
 
+  // Auto-scroll to current page when it changes (for search navigation)
+  const prevPageRef = useRef(currentPage)
+  useEffect(() => {
+    if (currentPage !== prevPageRef.current && scrollContainerRef.current) {
+      const element = scrollContainerRef.current.querySelector(
+        `[data-page-number="${currentPage}"]`
+      )
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+      prevPageRef.current = currentPage
+    }
+  }, [currentPage])
+
   // Scroll to page when clicking thumbnail
   const handleThumbnailClick = useCallback(
     (pageIndex: number) => {

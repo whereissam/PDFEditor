@@ -25,6 +25,7 @@
     "clsx": "^2.1.1",
     "dexie": "^4.2.1",
     "lucide-react": "^0.523.0",
+    "minisearch": "^7.2.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.530",
     "react": "^19.2.3",

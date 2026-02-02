@@ -7,6 +7,7 @@ import { useEditorStore } from '@/stores/editor-store'
 import { useAutoSave } from '@/hooks/useHistory'
 import { exportPDF, downloadPDF } from '@/lib/pdf/export'
 import { getDocument } from '@/lib/storage'
+import { SearchProvider } from '@/contexts/SearchContext'
 import { Loader2, AlertCircle, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
@@ -146,9 +147,11 @@ function EditorPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <Toolbar onExport={handleExport} />
-      <PDFViewer pdfDocument={pdfDocument} className="flex-1" />
-    </div>
+    <SearchProvider pdfDocument={pdfDocument}>
+      <div className="h-screen flex flex-col bg-background overflow-hidden">
+        <Toolbar onExport={handleExport} />
+        <PDFViewer pdfDocument={pdfDocument} className="flex-1" />
+      </div>
+    </SearchProvider>
   )
 }

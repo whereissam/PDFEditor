@@ -23,11 +23,11 @@ Build a modern, fast PDF editor for **general consumers** (students, individuals
 
 ### Phase 2: Text & Search
 - [x] Add text layer with selection
-- [ ] Implement search functionality (basic structure done, needs full text search)
-- [ ] Web Worker for background text extraction
-- [ ] Build search index with MiniSearch/FlexSearch on PDF load
-- [ ] Contextual snippets (3-4 words before/after match)
-- [ ] Auto-scroll to search result with smooth animation
+- [x] Implement search functionality (full text search with MiniSearch)
+- [x] Web Worker for background text extraction
+- [x] Build search index with MiniSearch on PDF load
+- [x] Contextual snippets (3-4 words before/after match)
+- [x] Auto-scroll to search result with smooth animation
 
 ### Phase 3: Annotations
 - [x] Add highlight annotation (text-snapped)
